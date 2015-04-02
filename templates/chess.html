@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
   <link rel="stylesheet" href="static/css/chessboard-0.3.0.min.css" />
+  <link rel="stylesheet" href="static/css/style.css" />
   <script src="static/js/chess.js"></script>
 </head>
 <body>
@@ -46,19 +47,44 @@
 
       //--- start example JS ---
       var board,
+        boardEl = $('#board'),
         game = new Chess(),
-        statusEl = $('#status'),
-        fenEl = $('#fen'),
-        pgnEl = $('#pgn');
+        squareToHighlight;
+
+      var removeHighlights = function(color) {
+        boardEl.find('.square-55d63')
+          .removeClass('highlight-' + color);
+      };
 
       // do not pick up pieces if the game is over
-      // only pick up pieces for the side to move
+      // only pick up pieces for White
       var onDragStart = function(source, piece, position, orientation) {
-        if (game.game_over() === true ||
-            (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
-            (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+        if (game.in_checkmate() === true || game.in_draw() === true ||
+          piece.search(/^b/) !== -1) {
           return false;
         }
+      };
+
+      var makeRandomMove = function() {
+        var possibleMoves = game.moves({
+          verbose: true
+        });
+
+        // game over
+        if (possibleMoves.length === 0) return;
+
+        var randomIndex = Math.floor(Math.random() * possibleMoves.length);
+        var move = possibleMoves[randomIndex];
+        game.move(move.san);
+
+        // highlight black's move
+        removeHighlights('black');
+        boardEl.find('.square-' + move.from).addClass('highlight-black');
+        squareToHighlight = move.to;
+
+        // update the board to the new position
+        socket.emit('move', {room: 'game_001', data: game.fen()});
+        board.position(game.fen());
       };
 
       var onDrop = function(source, target) {
@@ -72,62 +98,36 @@
         // illegal move
         if (move === null) return 'snapback';
 
-        updateStatus();
+        // highlight white's move
+        removeHighlights('white');
+        boardEl.find('.square-' + source).addClass('highlight-white');
+        boardEl.find('.square-' + target).addClass('highlight-white');
+
+        // make random move for black
+        window.setTimeout(makeRandomMove, 250);
       };
 
-      // update the board position after the piece snap 
+      var onMoveEnd = function() {
+        boardEl.find('.square-' + squareToHighlight)
+          .addClass('highlight-black');
+      };
+
+      // update the board position after the piece snap
       // for castling, en passant, pawn promotion
       var onSnapEnd = function() {
         board.position(game.fen());
-        console.log(game.fen());
-        socket.emit('my room event', {room: 'game_001', data: game.fen()});
-        return false;
-      };
-
-      var updateStatus = function() {
-        var status = '';
-
-        var moveColor = 'White';
-        if (game.turn() === 'b') {
-          moveColor = 'Black';
-        }
-
-        // checkmate?
-        if (game.in_checkmate() === true) {
-          status = 'Game over, ' + moveColor + ' is in checkmate.';
-        }
-
-        // draw?
-        else if (game.in_draw() === true) {
-          status = 'Game over, drawn position';
-        }
-
-        // game still on
-        else {
-          status = moveColor + ' to move';
-
-          // check?
-          if (game.in_check() === true) {
-            status += ', ' + moveColor + ' is in check';
-          }
-        }
-
-        statusEl.html(status);
-        fenEl.html(game.fen());
-        pgnEl.html(game.pgn());
+        socket.emit('move', {room: 'game_001', data: game.fen()});
       };
 
       var cfg = {
-        showNotation: false,
         draggable: true,
         position: 'start',
         onDragStart: onDragStart,
         onDrop: onDrop,
+        onMoveEnd: onMoveEnd,
         onSnapEnd: onSnapEnd
       };
       board = new ChessBoard('board', cfg);
-
-      updateStatus();
       //--- end example JS ---
 
     }; // end init()

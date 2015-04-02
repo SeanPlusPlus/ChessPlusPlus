@@ -49,7 +49,7 @@ def join(message):
           'count': session['receive_count']})
 
 
-@socketio.on('my room event', namespace='/test')
+@socketio.on('move', namespace='/test')
 def send_room_message(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
     emit('my response',
