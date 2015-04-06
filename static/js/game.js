@@ -121,6 +121,7 @@ var init = function() {
 
   var cfg = {
     orientation: orientation,
+    showNotation: false,
     draggable: true,
     position: position,
     onDragStart: onDragStart,

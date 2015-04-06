@@ -12,6 +12,8 @@
 
 #board {
   margin: 0px auto;
+  width: 500px;
+  padding-top: 50px;
 }
 
 body {
