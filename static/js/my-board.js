@@ -106,5 +106,12 @@ var init = function() {
   board = new ChessBoard('board', cfg);
   //--- end example JS ---
 
+  namespace = '/test';
+  var socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
+  socket.on('my response', function(msg) {
+    console.log(msg.data);
+  });
+
+
 }; // end init()
 $(document).ready(init);
