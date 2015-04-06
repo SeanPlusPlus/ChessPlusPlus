@@ -1,0 +1,6 @@
+@media (max-width: 720px) { 
+  #board {
+    width: 100%;
+    padding-top: 10px;
+  }
+}
