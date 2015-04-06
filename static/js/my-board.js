@@ -11,12 +11,11 @@ var init = function() {
   socket.on('my response', function(msg) {
     console.log(msg);
 
-    var update  = false;
-    var current = {
-      color: orientation.split('')[0]
-    };
+    // initialize variables
+    var current = { color: orientation.split('')[0]};
+    var move    = {};
 
-    var move = {};
+    // get color of board that made move
     try {
       move.color = msg.data.move.color;
     }
@@ -24,12 +23,13 @@ var init = function() {
       move.color = null;
     }
 
+    // evaluate if we need to update board
     if (move.color !== null) {
       if (current.color !== move.color) {
-        update = true;
+        console.log('update');
       }
-      console.log(update);
     }
+
 
   });
   socket.emit('join', {room: 'game_001'});
