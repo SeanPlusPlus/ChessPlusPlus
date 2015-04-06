@@ -95,7 +95,16 @@ var init = function() {
     socket.emit('move', {room: 'game_001', data: game.fen()});
   };
 
+  function get(name){
+    if(name=(new RegExp('[?&]'+encodeURIComponent(name)+'=([^&]*)')).exec(location.search))
+      return decodeURIComponent(name[1]);
+  }
+  var orientation = 'white';
+  if (get('orientation') === 'black') {
+    orientation = 'black';
+  }
   var cfg = {
+    orientation: orientation,
     draggable: true,
     position: 'start',
     onDragStart: onDragStart,
