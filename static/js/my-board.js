@@ -33,14 +33,11 @@ var init = function() {
       if (current.color !== move.color) {
         move.str = msg.data.move.from + '-' + msg.data.move.to
         board.move(move.str);
-        console.log(game.turn());
         var move = game.move({
           from: msg.data.move.from,
           to: msg.data.move.to,
           promotion: 'q' // NOTE: always promote to a queen for example simplicity
         });
-        console.log(game.turn());
-        console.log(move);
         updateStatus();
       }
     }
@@ -59,6 +56,8 @@ var init = function() {
 
   var onDrop = function(source, target) {
     // see if the move is legal
+
+    if (game.turn() !== orientation.split('')[0]) return 'snapback';
 
     var move = game.move({
       from: source,
