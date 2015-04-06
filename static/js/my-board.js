@@ -1,66 +1,30 @@
 var init = function() {
-  namespace = '/test'; // change to an empty string to use the global namespace
 
-  // the socket.io documentation recommends sending an explicit package upon connection
-  // this is specially important when using the global namespace
+  namespace = '/test'; 
   var socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
   socket.on('connect', function() {
     socket.emit('my event', {data: 'I\'m connected!'});
   });
-
-  // event handler for server sent data
-  // the data is displayed in the "Received" section of the page
   socket.on('my response', function(msg) {
-    $('#log').append('<br>Received #' + msg.count + ': ' + msg.data);
+    console.log(msg.data);
   });
-
   socket.emit('join', {room: 'game_001'});
 
-  $('form#send_room').submit(function(event) {
-    socket.emit('my room event', {room: 'game_001', data: $('#room_data').val()});
-    return false;
-  });
-
-  //--- start example JS ---
+  // baord
   var board,
-    boardEl = $('#board'),
     game = new Chess(),
-    squareToHighlight;
-
-  var removeHighlights = function(color) {
-    boardEl.find('.square-55d63')
-      .removeClass('highlight-' + color);
-  };
+    statusEl = $('#status'),
+    fenEl = $('#fen'),
+    pgnEl = $('#pgn');
 
   // do not pick up pieces if the game is over
-  // only pick up pieces for White
+  // only pick up pieces for the side to move
   var onDragStart = function(source, piece, position, orientation) {
-    if (game.in_checkmate() === true || game.in_draw() === true ||
-      piece.search(/^b/) !== -1) {
+    if (game.game_over() === true ||
+        (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+        (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
       return false;
     }
-  };
-
-  var makeRandomMove = function() {
-    var possibleMoves = game.moves({
-      verbose: true
-    });
-
-    // game over
-    if (possibleMoves.length === 0) return;
-
-    var randomIndex = Math.floor(Math.random() * possibleMoves.length);
-    var move = possibleMoves[randomIndex];
-    game.move(move.san);
-
-    // highlight black's move
-    removeHighlights('black');
-    boardEl.find('.square-' + move.from).addClass('highlight-black');
-    squareToHighlight = move.to;
-
-    // update the board to the new position
-    socket.emit('move', {room: 'game_001', data: game.fen()});
-    board.position(game.fen());
   };
 
   var onDrop = function(source, target) {
@@ -74,25 +38,47 @@ var init = function() {
     // illegal move
     if (move === null) return 'snapback';
 
-    // highlight white's move
-    removeHighlights('white');
-    boardEl.find('.square-' + source).addClass('highlight-white');
-    boardEl.find('.square-' + target).addClass('highlight-white');
-
-    // make random move for black
-    window.setTimeout(makeRandomMove, 250);
+    updateStatus();
   };
 
-  var onMoveEnd = function() {
-    boardEl.find('.square-' + squareToHighlight)
-      .addClass('highlight-black');
-  };
-
-  // update the board position after the piece snap
+  // update the board position after the piece snap 
   // for castling, en passant, pawn promotion
   var onSnapEnd = function() {
     board.position(game.fen());
     socket.emit('move', {room: 'game_001', data: game.fen()});
+  };
+
+  var updateStatus = function() {
+    var status = '';
+
+    var moveColor = 'White';
+    if (game.turn() === 'b') {
+      moveColor = 'Black';
+    }
+
+    // checkmate?
+    if (game.in_checkmate() === true) {
+      status = 'Game over, ' + moveColor + ' is in checkmate.';
+    }
+
+    // draw?
+    else if (game.in_draw() === true) {
+      status = 'Game over, drawn position';
+    }
+
+    // game still on
+    else {
+      status = moveColor + ' to move';
+
+      // check?
+      if (game.in_check() === true) {
+        status += ', ' + moveColor + ' is in check';
+      }
+    }
+
+    statusEl.html(status);
+    fenEl.html(game.fen());
+    pgnEl.html(game.pgn());
   };
 
   function get(name){
@@ -109,18 +95,11 @@ var init = function() {
     position: 'start',
     onDragStart: onDragStart,
     onDrop: onDrop,
-    onMoveEnd: onMoveEnd,
     onSnapEnd: onSnapEnd
   };
   board = new ChessBoard('board', cfg);
-  //--- end example JS ---
 
-  namespace = '/test';
-  var socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
-  socket.on('my response', function(msg) {
-    console.log(msg.data);
-  });
-
+  updateStatus();
 
 }; // end init()
 $(document).ready(init);
