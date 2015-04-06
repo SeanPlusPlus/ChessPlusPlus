@@ -12,10 +12,10 @@ var init = function() {
     console.log(msg);
 
     // initialize variables
-    var current = { color: orientation.split('')[0]};
+    var current = {color: orientation.split('')[0]};
     var move    = {};
 
-    // get color of board that made move
+    // get color that just made the move
     try {
       move.color = msg.data.move.color;
     }
@@ -29,8 +29,6 @@ var init = function() {
         console.log('update');
       }
     }
-
-
   });
   socket.emit('join', {room: 'game_001'});
 
