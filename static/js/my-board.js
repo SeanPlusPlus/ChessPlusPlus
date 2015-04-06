@@ -1,12 +1,36 @@
 var init = function() {
 
+  function get(name){
+    if(name=(new RegExp('[?&]'+encodeURIComponent(name)+'=([^&]*)')).exec(location.search))
+      return decodeURIComponent(name[1]);
+  }
+  var orientation = get('orientation');
+
   namespace = '/test'; 
   var socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
-  socket.on('connect', function() {
-    socket.emit('my event', {data: 'I\'m connected!'});
-  });
   socket.on('my response', function(msg) {
-    console.log(msg.data);
+    console.log(msg);
+
+    var update  = false;
+    var current = {
+      color: orientation.split('')[0]
+    };
+
+    var move = {};
+    try {
+      move.color = msg.data.move.color;
+    }
+    catch (e) {
+      move.color = null;
+    }
+
+    if (move.color !== null) {
+      if (current.color !== move.color) {
+        update = true;
+      }
+      console.log(update);
+    }
+
   });
   socket.emit('join', {room: 'game_001'});
 
@@ -38,6 +62,15 @@ var init = function() {
     // illegal move
     if (move === null) return 'snapback';
 
+    socket.emit('move', {
+      room: 'game_001',
+      data: {
+        game: game.fen(),
+        move: move,
+        orientation: orientation,
+      }
+    });
+
     updateStatus();
   };
 
@@ -45,7 +78,6 @@ var init = function() {
   // for castling, en passant, pawn promotion
   var onSnapEnd = function() {
     board.position(game.fen());
-    socket.emit('move', {room: 'game_001', data: game.fen()});
   };
 
   var updateStatus = function() {
@@ -81,14 +113,6 @@ var init = function() {
     pgnEl.html(game.pgn());
   };
 
-  function get(name){
-    if(name=(new RegExp('[?&]'+encodeURIComponent(name)+'=([^&]*)')).exec(location.search))
-      return decodeURIComponent(name[1]);
-  }
-  var orientation = 'white';
-  if (get('orientation') === 'black') {
-    orientation = 'black';
-  }
   var cfg = {
     orientation: orientation,
     draggable: true,
