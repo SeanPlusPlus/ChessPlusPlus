@@ -5,11 +5,16 @@ var init = function() {
       return decodeURIComponent(name[1]);
   }
   var orientation = get('orientation');
+  var position = 'start';
+  var board,
+    game = new Chess(),
+    statusEl = $('#status'),
+    fenEl = $('#fen'),
+    pgnEl = $('#pgn');
 
-  namespace = '/test'; 
+  var namespace = '/test'; 
   var socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
   socket.on('my response', function(msg) {
-    console.log(msg);
 
     // initialize variables
     var current = {color: orientation.split('')[0]};
@@ -26,18 +31,21 @@ var init = function() {
     // evaluate if we need to update board
     if (move.color !== null) {
       if (current.color !== move.color) {
-        console.log('update');
+        move.str = msg.data.move.from + '-' + msg.data.move.to
+        board.move(move.str);
+        console.log(game.turn());
+        var move = game.move({
+          from: msg.data.move.from,
+          to: msg.data.move.to,
+          promotion: 'q' // NOTE: always promote to a queen for example simplicity
+        });
+        console.log(game.turn());
+        console.log(move);
+        updateStatus();
       }
     }
   });
   socket.emit('join', {room: 'game_001'});
-
-  // baord
-  var board,
-    game = new Chess(),
-    statusEl = $('#status'),
-    fenEl = $('#fen'),
-    pgnEl = $('#pgn');
 
   // do not pick up pieces if the game is over
   // only pick up pieces for the side to move
@@ -51,6 +59,7 @@ var init = function() {
 
   var onDrop = function(source, target) {
     // see if the move is legal
+
     var move = game.move({
       from: source,
       to: target,
@@ -79,7 +88,7 @@ var init = function() {
   };
 
   var updateStatus = function() {
-    var status = '';
+    //var status = '';
 
     var moveColor = 'White';
     if (game.turn() === 'b') {
@@ -114,7 +123,7 @@ var init = function() {
   var cfg = {
     orientation: orientation,
     draggable: true,
-    position: 'start',
+    position: position,
     onDragStart: onDragStart,
     onDrop: onDrop,
     onSnapEnd: onSnapEnd
