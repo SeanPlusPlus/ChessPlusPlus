@@ -5,6 +5,7 @@ var init = function() {
       return decodeURIComponent(name[1]);
   }
   var orientation = get('orientation');
+  console.log(orientation);
   var position = 'start';
   var board,
     game = new Chess(),

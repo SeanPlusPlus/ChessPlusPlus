@@ -29,7 +29,7 @@ def index():
     if thread is None:
         thread = Thread(target=background_thread)
         thread.start()
-    return render_template('chat.html')
+    return render_template('index.html')
 
 @app.route('/chess')
 def chess():
