@@ -20,8 +20,6 @@ def background_thread():
     while True:
         time.sleep(10)
         count += 1
-        print count
-
 
 @app.route('/')
 def index():
@@ -51,6 +49,7 @@ def join(message):
 
 @socketio.on('move', namespace='/test')
 def send_room_message(message):
+    print message
     session['receive_count'] = session.get('receive_count', 0) + 1
     emit('my response',
          {'data': message['data'], 'count': session['receive_count']},

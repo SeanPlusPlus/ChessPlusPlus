@@ -5,7 +5,6 @@ var init = function() {
       return decodeURIComponent(name[1]);
   }
   var orientation = get('orientation');
-  console.log(orientation);
   var position = 'start';
   var board,
     game = new Chess(),
@@ -42,8 +41,8 @@ var init = function() {
         updateStatus();
       }
     }
-  });
-  socket.emit('join', {room: 'game_001'});
+  }); 
+  socket.emit('join', {room: get('game')});
 
   // do not pick up pieces if the game is over
   // only pick up pieces for the side to move
@@ -70,7 +69,7 @@ var init = function() {
     if (move === null) return 'snapback';
 
     socket.emit('move', {
-      room: 'game_001',
+      room: get('game'),
       data: {
         game: game.fen(),
         move: move,
